@@ -1,427 +1,1622 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Prompt Framework</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI App Builder — Industry Prompt Sandbox</title>
+<style>
+/* ==================== CSS VARIABLES ==================== */
+:root[data-theme="dark"] {
+  --bg-base: #030712;
+  --bg-surface: rgba(15, 23, 42, 0.8);
+  --bg-glass: rgba(255,255,255,0.04);
+  --bg-glass-hover: rgba(255,255,255,0.08);
+  --bg-card: rgba(15,23,42,0.7);
+  --border: rgba(255,255,255,0.1);
+  --border-strong: rgba(255,255,255,0.2);
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #475569;
+  --accent: #6366f1;
+  --accent-glow: rgba(99,102,241,0.35);
+  --accent-2: #8b5cf6;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --gradient-hero: linear-gradient(135deg, #1e1b4b 0%, #0f172a 40%, #0c1a2e 100%);
+  --gradient-card: linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.05) 100%);
+  --shadow-glass: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+  --shadow-card: 0 4px 24px rgba(0,0,0,0.3);
+  --blur: blur(16px);
+}
+:root[data-theme="light"] {
+  --bg-base: #f8fafc;
+  --bg-surface: rgba(255,255,255,0.85);
+  --bg-glass: rgba(255,255,255,0.6);
+  --bg-glass-hover: rgba(255,255,255,0.85);
+  --bg-card: rgba(255,255,255,0.75);
+  --border: rgba(0,0,0,0.08);
+  --border-strong: rgba(0,0,0,0.15);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --accent: #4f46e5;
+  --accent-glow: rgba(79,70,229,0.2);
+  --accent-2: #7c3aed;
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --gradient-hero: linear-gradient(135deg, #ede9fe 0%, #f0f9ff 50%, #fdf4ff 100%);
+  --gradient-card: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.03) 100%);
+  --shadow-glass: 0 8px 32px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
+  --shadow-card: 0 4px 24px rgba(0,0,0,0.06);
+  --blur: blur(16px);
+}
 
-        :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #f1f5f9;
-            --bg: #0f172a;
-            --bg-card: #1e293b;
-            --text: #e2e8f0;
-            --text-muted: #94a3b8;
-            --border: #334155;
-            --success: #22c55e;
-            --danger: #ef4444;
-        }
+/* ==================== RESET & BASE ==================== */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg-base);
+  color:var(--text-primary);
+  min-height:100vh;
+  transition:background 0.3s,color 0.3s;
+  overflow-x:hidden;
+}
 
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            min-height: 100vh;
-        }
+/* ==================== BACKGROUND ORBS ==================== */
+.bg-orbs{
+  position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;
+}
+.orb{
+  position:absolute;border-radius:50%;filter:blur(80px);opacity:0.35;
+  animation:float 8s ease-in-out infinite;
+}
+.orb-1{width:600px;height:600px;background:radial-gradient(circle,#6366f1,transparent);top:-200px;left:-200px;animation-delay:0s;}
+.orb-2{width:500px;height:500px;background:radial-gradient(circle,#8b5cf6,transparent);bottom:-150px;right:-150px;animation-delay:3s;}
+.orb-3{width:400px;height:400px;background:radial-gradient(circle,#06b6d4,transparent);top:40%;left:50%;animation-delay:6s;}
+[data-theme="light"] .orb{opacity:0.12;}
+@keyframes float{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-30px) scale(1.05);}}
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
+/* ==================== LAYOUT ==================== */
+.wrapper{position:relative;z-index:1;}
 
-        header {
-            text-align: center;
-            margin-bottom: 3rem;
-            padding: 2rem;
-            background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
-            border-radius: 1rem;
-        }
+/* ==================== NAVBAR ==================== */
+.navbar{
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 32px;height:64px;
+  background:var(--bg-glass);
+  backdrop-filter:var(--blur);
+  -webkit-backdrop-filter:var(--blur);
+  border-bottom:1px solid var(--border);
+  box-shadow:0 4px 16px rgba(0,0,0,0.1);
+}
+.nav-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.1rem;}
+.nav-logo{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+}
+.nav-links{display:flex;align-items:center;gap:4px;}
+.nav-link{
+  padding:6px 14px;border-radius:8px;font-size:0.875rem;font-weight:500;
+  color:var(--text-secondary);cursor:pointer;border:none;background:transparent;
+  transition:all 0.2s;
+}
+.nav-link:hover,.nav-link.active{
+  color:var(--text-primary);background:var(--bg-glass-hover);
+}
+.nav-link.active{color:var(--accent);}
+.nav-actions{display:flex;align-items:center;gap:10px;}
+.theme-toggle{
+  width:44px;height:44px;border-radius:12px;border:1px solid var(--border);
+  background:var(--bg-glass);cursor:pointer;display:flex;align-items:center;
+  justify-content:center;font-size:18px;transition:all 0.2s;color:var(--text-primary);
+}
+.theme-toggle:hover{background:var(--bg-glass-hover);border-color:var(--border-strong);}
+.btn-primary{
+  padding:8px 18px;border-radius:10px;font-size:0.875rem;font-weight:600;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  color:#fff;border:none;cursor:pointer;transition:all 0.2s;
+  box-shadow:0 4px 12px var(--accent-glow);
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px var(--accent-glow);}
 
-        header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-        }
+/* ==================== HERO ==================== */
+.hero{
+  min-height:90vh;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;text-align:center;padding:80px 24px 60px;
+  background:var(--gradient-hero);
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:6px 16px;border-radius:999px;margin-bottom:24px;
+  background:var(--bg-glass);border:1px solid var(--border);
+  font-size:0.8rem;font-weight:600;color:var(--accent);
+  backdrop-filter:var(--blur);
+}
+.hero h1{
+  font-size:clamp(2.5rem,6vw,4.5rem);font-weight:800;line-height:1.1;
+  margin-bottom:20px;letter-spacing:-0.03em;
+}
+.hero h1 .highlight{
+  background:linear-gradient(135deg,var(--accent),var(--accent-2),#06b6d4);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero p{
+  font-size:clamp(1rem,2.5vw,1.25rem);color:var(--text-secondary);
+  max-width:600px;margin:0 auto 40px;line-height:1.7;
+}
+.hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.btn-ghost{
+  padding:12px 24px;border-radius:12px;font-size:0.95rem;font-weight:600;
+  border:1px solid var(--border-strong);background:var(--bg-glass);
+  color:var(--text-primary);cursor:pointer;transition:all 0.2s;
+  backdrop-filter:var(--blur);
+}
+.btn-ghost:hover{background:var(--bg-glass-hover);transform:translateY(-1px);}
+.btn-lg{padding:14px 32px;font-size:1rem;border-radius:14px;}
+.hero-stats{
+  display:flex;gap:48px;margin-top:64px;flex-wrap:wrap;justify-content:center;
+}
+.stat{text-align:center;}
+.stat-number{font-size:2rem;font-weight:800;color:var(--accent);}
+.stat-label{font-size:0.8rem;color:var(--text-muted);margin-top:4px;}
 
-        header p {
-            opacity: 0.9;
-            font-size: 1.1rem;
-        }
+/* ==================== SECTION ==================== */
+.section{padding:80px 24px;}
+.section-inner{max-width:1200px;margin:0 auto;}
+.section-header{text-align:center;margin-bottom:48px;}
+.section-tag{
+  display:inline-block;padding:4px 12px;border-radius:999px;
+  font-size:0.75rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+  background:var(--accent-glow);color:var(--accent);margin-bottom:12px;
+}
+.section-title{font-size:clamp(1.75rem,4vw,2.5rem);font-weight:800;margin-bottom:12px;letter-spacing:-0.02em;}
+.section-sub{font-size:1rem;color:var(--text-secondary);max-width:550px;margin:0 auto;}
 
-        .tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-bottom: 2rem;
-            padding: 0.5rem;
-            background: var(--bg-card);
-            border-radius: 0.75rem;
-        }
+/* ==================== GLASS CARD ==================== */
+.glass-card{
+  background:var(--bg-glass);
+  backdrop-filter:var(--blur);
+  -webkit-backdrop-filter:var(--blur);
+  border:1px solid var(--border);
+  border-radius:20px;
+  box-shadow:var(--shadow-glass);
+  transition:transform 0.2s,box-shadow 0.2s,border-color 0.2s;
+}
+.glass-card:hover{
+  transform:translateY(-4px);
+  box-shadow:var(--shadow-glass),0 0 0 1px var(--border-strong);
+  border-color:var(--border-strong);
+}
 
-        .tab-btn {
-            padding: 0.75rem 1.25rem;
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            border-radius: 0.5rem;
-            font-size: 0.95rem;
-            transition: all 0.2s;
-        }
+/* ==================== SANDBOX ==================== */
+.sandbox{padding:80px 24px;background:var(--gradient-hero);}
+.sandbox-inner{max-width:1200px;margin:0 auto;}
+.sandbox-layout{display:grid;grid-template-columns:280px 1fr;gap:24px;align-items:start;}
+.sandbox-sidebar{}
+.industry-list{display:flex;flex-direction:column;gap:8px;}
+.industry-btn{
+  display:flex;align-items:center;gap:12px;padding:12px 16px;
+  border-radius:14px;cursor:pointer;border:1px solid transparent;
+  background:var(--bg-glass);backdrop-filter:var(--blur);
+  transition:all 0.2s;color:var(--text-primary);font-weight:500;font-size:0.9rem;
+}
+.industry-btn:hover{background:var(--bg-glass-hover);border-color:var(--border);}
+.industry-btn.active{
+  border-color:var(--accent);background:rgba(99,102,241,0.15);color:var(--accent);
+}
+.industry-icon{font-size:20px;}
+.industry-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--accent);
+  margin-left:auto;display:none;
+}
+.industry-btn.active .industry-dot{display:block;}
 
-        .tab-btn:hover {
-            color: var(--text);
-            background: var(--border);
-        }
+.sandbox-main{}
+.sandbox-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:20px;flex-wrap:wrap;gap:12px;
+}
+.sandbox-title{font-size:1.35rem;font-weight:700;}
+.sandbox-actions{display:flex;gap:8px;}
 
-        .tab-btn.active {
-            background: var(--primary);
-            color: white;
-        }
+.themes-row{display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;}
+.theme-pill{
+  padding:8px 16px;border-radius:999px;font-size:0.82rem;font-weight:600;
+  border:1px solid var(--border);background:var(--bg-glass);cursor:pointer;
+  transition:all 0.2s;color:var(--text-secondary);
+}
+.theme-pill:hover{border-color:var(--border-strong);color:var(--text-primary);}
+.theme-pill.active{
+  border-color:var(--accent);background:rgba(99,102,241,0.2);color:var(--accent);
+}
 
-        .section {
-            display: none;
-        }
+.pages-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;
+  margin-bottom:24px;
+}
+.page-chip{
+  display:flex;align-items:center;gap-6px;padding:10px 14px;
+  border-radius:12px;font-size:0.82rem;font-weight:500;
+  background:var(--bg-glass);border:1px solid var(--border);
+  cursor:pointer;transition:all 0.2s;color:var(--text-secondary);
+  backdrop-filter:var(--blur);
+}
+.page-chip:hover{border-color:var(--border-strong);color:var(--text-primary);}
+.page-chip.selected{
+  border-color:var(--accent);background:rgba(99,102,241,0.15);color:var(--accent);font-weight:600;
+}
+.page-chip-num{
+  width:20px;height:20px;border-radius:6px;background:var(--accent-glow);
+  display:flex;align-items:center;justify-content:center;font-size:10px;
+  font-weight:700;color:var(--accent);margin-right:6px;flex-shrink:0;
+}
 
-        .section.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
+.prompt-output{
+  background:rgba(0,0,0,0.25);border:1px solid var(--border);
+  border-radius:16px;padding:20px;font-family:'JetBrains Mono','Fira Code',monospace;
+  font-size:0.82rem;line-height:1.7;color:#a5f3fc;white-space:pre-wrap;
+  max-height:420px;overflow-y:auto;position:relative;
+}
+[data-theme="light"] .prompt-output{background:rgba(15,23,42,0.05);color:#1e3a5f;}
+.prompt-label{
+  font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;
+  color:var(--text-muted);margin-bottom:10px;
+}
+.copy-toast{
+  position:fixed;bottom:32px;right:32px;
+  background:var(--accent);color:#fff;padding:12px 20px;border-radius:12px;
+  font-weight:600;font-size:0.85rem;z-index:999;
+  transform:translateY(100px);opacity:0;transition:all 0.3s;pointer-events:none;
+}
+.copy-toast.show{transform:translateY(0);opacity:1;}
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+/* ==================== FEATURES GRID ==================== */
+.features-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;
+}
+.feature-card{
+  padding:28px;position:relative;overflow:hidden;
+}
+.feature-icon{
+  width:52px;height:52px;border-radius:16px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;margin-bottom:16px;
+  background:linear-gradient(135deg,var(--accent-glow),rgba(139,92,246,0.15));
+  border:1px solid rgba(99,102,241,0.2);
+}
+.feature-card h3{font-size:1.05rem;font-weight:700;margin-bottom:8px;}
+.feature-card p{font-size:0.875rem;color:var(--text-secondary);line-height:1.6;}
+.feature-badge{
+  position:absolute;top:20px;right:20px;
+  padding:2px 8px;border-radius:999px;font-size:0.65rem;font-weight:700;
+  background:rgba(16,185,129,0.15);color:#10b981;border:1px solid rgba(16,185,129,0.3);
+}
 
-        .section-title {
-            font-size: 1.75rem;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
+/* ==================== HOW IT WORKS ==================== */
+.steps-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px;
+}
+.step-card{padding:32px;text-align:center;}
+.step-num{
+  width:56px;height:56px;border-radius:16px;margin:0 auto 20px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.25rem;font-weight:800;color:#fff;
+}
+.step-card h3{font-size:1rem;font-weight:700;margin-bottom:8px;}
+.step-card p{font-size:0.875rem;color:var(--text-secondary);line-height:1.6;}
 
-        .cards-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 1.5rem;
-        }
+/* ==================== TEMPLATES BROWSER ==================== */
+.templates-tabs{
+  display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;
+}
+.tab-pill{
+  padding:8px 18px;border-radius:10px;font-size:0.85rem;font-weight:600;
+  border:1px solid var(--border);background:transparent;cursor:pointer;
+  color:var(--text-secondary);transition:all 0.2s;
+}
+.tab-pill:hover{background:var(--bg-glass);color:var(--text-primary);}
+.tab-pill.active{
+  background:var(--accent);color:#fff;border-color:var(--accent);
+  box-shadow:0 4px 12px var(--accent-glow);
+}
+.templates-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;
+}
+.template-card{padding:24px;}
+.template-tag{
+  display:inline-block;padding:3px 10px;border-radius:999px;
+  font-size:0.72rem;font-weight:700;margin-bottom:12px;
+}
+.template-card h3{font-size:1rem;font-weight:700;margin-bottom:6px;}
+.template-card .desc{font-size:0.85rem;color:var(--text-secondary);margin-bottom:14px;}
+.template-code{
+  background:rgba(0,0,0,0.2);border:1px solid var(--border);border-radius:10px;
+  padding:12px;font-family:'JetBrains Mono',monospace;font-size:0.78rem;
+  line-height:1.6;color:#86efac;max-height:120px;overflow:hidden;position:relative;
+}
+[data-theme="light"] .template-code{background:rgba(15,23,42,0.05);color:#1a4731;}
+.template-code::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:40px;
+  background:linear-gradient(transparent,var(--bg-card));
+}
+.template-footer{
+  display:flex;align-items:center;justify-content:space-between;margin-top:14px;
+}
+.copy-btn{
+  padding:6px 14px;border-radius:8px;font-size:0.8rem;font-weight:600;
+  background:var(--accent);color:#fff;border:none;cursor:pointer;
+  transition:all 0.2s;box-shadow:0 2px 8px var(--accent-glow);
+}
+.copy-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px var(--accent-glow);}
+.copy-btn.copied{background:var(--success);}
 
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
+/* ==================== BEST PRACTICES ==================== */
+.practices-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;
+}
+.practice-section{padding:28px;}
+.practice-title{
+  display:flex;align-items:center;gap:8px;font-size:1rem;font-weight:700;
+  margin-bottom:16px;
+}
+.practice-icon{font-size:20px;}
+.practice-list{list-style:none;display:flex;flex-direction:column;gap:10px;}
+.practice-list li{
+  display:flex;align-items:flex-start;gap:10px;font-size:0.875rem;
+  color:var(--text-secondary);line-height:1.5;
+}
+.practice-list .dot{
+  width:20px;height:20px;border-radius:6px;flex-shrink:0;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;
+}
+.dot-do{background:rgba(16,185,129,0.15);color:#10b981;}
+.dot-dont{background:rgba(239,68,68,0.15);color:#ef4444;}
 
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
-        }
+/* ==================== CTA BANNER ==================== */
+.cta-banner{
+  padding:80px 24px;background:linear-gradient(135deg,rgba(99,102,241,0.15) 0%,rgba(139,92,246,0.1) 100%);
+  text-align:center;
+}
+.cta-inner{max-width:640px;margin:0 auto;}
+.cta-inner h2{font-size:clamp(1.75rem,4vw,2.5rem);font-weight:800;margin-bottom:16px;}
+.cta-inner p{color:var(--text-secondary);margin-bottom:32px;font-size:1rem;line-height:1.7;}
+.cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
 
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-        }
+/* ==================== FOOTER ==================== */
+footer{
+  padding:48px 24px;border-top:1px solid var(--border);
+  background:var(--bg-glass);backdrop-filter:var(--blur);
+}
+.footer-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;}
+.footer-brand{max-width:280px;}
+.footer-logo{display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:12px;}
+.footer-desc{font-size:0.875rem;color:var(--text-muted);line-height:1.6;}
+.footer-col h4{font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:16px;}
+.footer-links{list-style:none;display:flex;flex-direction:column;gap:10px;}
+.footer-links li a{font-size:0.875rem;color:var(--text-secondary);text-decoration:none;transition:color 0.2s;}
+.footer-links li a:hover{color:var(--accent);}
+.footer-bottom{
+  max-width:1200px;margin:32px auto 0;padding-top:24px;border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+}
+.footer-bottom p{font-size:0.8rem;color:var(--text-muted);}
 
-        .card h3 {
-            font-size: 1.2rem;
-            color: var(--text);
-        }
+/* ==================== PAGE SECTIONS ==================== */
+.page-section{display:none;}
+.page-section.active{display:block;animation:fadeInUp 0.4s ease;}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
 
-        .card-description {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-        }
+/* ==================== SCROLLBAR ==================== */
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--accent);}
 
-        .template-box {
-            background: #0d1117;
-            border: 1px solid var(--border);
-            border-radius: 0.5rem;
-            padding: 1rem;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 0.85rem;
-            white-space: pre-wrap;
-            max-height: 200px;
-            overflow-y: auto;
-            color: #c9d1d9;
-            margin-bottom: 1rem;
-        }
+/* ==================== RESPONSIVE ==================== */
+@media(max-width:900px){
+  .sandbox-layout{grid-template-columns:1fr;}
+  .industry-list{flex-direction:row;flex-wrap:wrap;}
+  .industry-btn{flex:1;min-width:120px;}
+  .footer-inner{grid-template-columns:1fr 1fr;}
+  .nav-links{display:none;}
+}
+@media(max-width:600px){
+  .navbar{padding:0 16px;}
+  .hero{padding:60px 16px 40px;}
+  .hero-stats{gap:32px;}
+  .section{padding:60px 16px;}
+  .sandbox{padding:60px 16px;}
+  .footer-inner{grid-template-columns:1fr;}
+}
 
-        .copy-btn {
-            width: 100%;
-            padding: 0.75rem;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 0.5rem;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: background 0.2s;
-        }
+/* ==================== PROGRESS BAR ==================== */
+.progress-bar{
+  position:fixed;top:0;left:0;height:3px;width:0%;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  z-index:1000;transition:width 0.1s;
+}
 
-        .copy-btn:hover {
-            background: var(--primary-dark);
-        }
+/* ==================== CHIP GLOW ==================== */
+.glow-accent{
+  box-shadow:0 0 20px var(--accent-glow);
+}
 
-        .copy-btn.copied {
-            background: var(--success);
-        }
+/* ==================== MOBILE MENU ==================== */
+.mobile-menu-btn{
+  display:none;width:44px;height:44px;border-radius:12px;
+  background:var(--bg-glass);border:1px solid var(--border);cursor:pointer;
+  align-items:center;justify-content:center;font-size:20px;color:var(--text-primary);
+}
+@media(max-width:900px){.mobile-menu-btn{display:flex;}}
 
-        .best-practices {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .practices-card {
-            background: var(--bg-card);
-            border-radius: 1rem;
-            padding: 1.5rem;
-            border: 1px solid var(--border);
-        }
-
-        .practices-card h3 {
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .practices-card.do h3 {
-            color: var(--success);
-        }
-
-        .practices-card.dont h3 {
-            color: var(--danger);
-        }
-
-        .practices-list {
-            list-style: none;
-        }
-
-        .practices-list li {
-            padding: 0.5rem 0;
-            padding-left: 1.5rem;
-            position: relative;
-            color: var(--text-muted);
-        }
-
-        .practices-card.do .practices-list li::before {
-            content: "✓";
-            position: absolute;
-            left: 0;
-            color: var(--success);
-        }
-
-        .practices-card.dont .practices-list li::before {
-            content: "✗";
-            position: absolute;
-            left: 0;
-            color: var(--danger);
-        }
-
-        .workflow-section {
-            background: var(--bg-card);
-            border-radius: 1rem;
-            padding: 2rem;
-            border: 1px solid var(--border);
-        }
-
-        .workflow-steps {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .workflow-step {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem;
-            background: var(--bg);
-            border-radius: 0.5rem;
-        }
-
-        .step-number {
-            width: 32px;
-            height: 32px;
-            background: var(--primary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            flex-shrink: 0;
-        }
-
-        .step-arrow {
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 1.5rem;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem;
-            }
-            
-            header h1 {
-                font-size: 1.75rem;
-            }
-            
-            .cards-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .tabs {
-                justify-content: center;
-            }
-        }
-    </style>
+.spinner{
+  width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);
+  border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>AI Prompt Framework</h1>
-            <p>Your complete system for building apps with AI assistance</p>
-        </header>
+<div class="bg-orbs" aria-hidden="true">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+<div class="progress-bar" id="progressBar"></div>
+<div class="wrapper">
 
-        <div class="tabs">
-            {% for key, section in prompts.items() %}
-            <button class="tab-btn {% if loop.first %}active{% endif %}" data-tab="{{ key }}">
-                {{ section.title }}
-            </button>
-            {% endfor %}
-            <button class="tab-btn" data-tab="best-practices">Best Practices</button>
-            <button class="tab-btn" data-tab="workflow">Development Flow</button>
-        </div>
+<!-- ==================== NAVBAR ==================== -->
+<nav class="navbar" role="navigation" aria-label="Main navigation">
+  <div class="nav-brand">
+    <div class="nav-logo" aria-hidden="true">⚡</div>
+    <span>AI App Builder</span>
+  </div>
+  <div class="nav-links" role="menubar">
+    <button class="nav-link active" role="menuitem" onclick="showPage('home')">Home</button>
+    <button class="nav-link" role="menuitem" onclick="showPage('sandbox')">Sandbox</button>
+    <button class="nav-link" role="menuitem" onclick="showPage('templates')">Templates</button>
+    <button class="nav-link" role="menuitem" onclick="showPage('docs')">Docs</button>
+  </div>
+  <div class="nav-actions">
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle dark/light mode" title="Toggle theme">🌙</button>
+    <button class="btn-primary" onclick="showPage('sandbox')">Start Building</button>
+    <button class="mobile-menu-btn" aria-label="Open menu">☰</button>
+  </div>
+</nav>
 
-        {% for key, section in prompts.items() %}
-        <div class="section {% if loop.first %}active{% endif %}" id="{{ key }}">
-            <h2 class="section-title">{{ section.title }}</h2>
-            <div class="cards-grid">
-                {% for item in section.items %}
-                <div class="card">
-                    <div class="card-header">
-                        <h3>{{ item.name }}</h3>
-                    </div>
-                    <p class="card-description">{{ item.description }}</p>
-                    <div class="template-box">{{ item.template }}</div>
-                    <button class="copy-btn" onclick="copyTemplate(this)">Copy Template</button>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endfor %}
+<!-- ==================== PAGES ==================== -->
 
-        <div class="section" id="best-practices">
-            <h2 class="section-title">Best Practices</h2>
-            <div class="best-practices">
-                <div class="practices-card do">
-                    <h3>DO These Things</h3>
-                    <ul class="practices-list">
-                        {% for item in best_practices.do %}
-                        <li>{{ item }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                <div class="practices-card dont">
-                    <h3>DON'T Do These</h3>
-                    <ul class="practices-list">
-                        {% for item in best_practices.dont %}
-                        <li>{{ item }}</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-        </div>
+<!-- HOME PAGE -->
+<div id="page-home" class="page-section active">
 
-        <div class="section" id="workflow">
-            <h2 class="section-title">Iterative Development Flow</h2>
-            <div class="workflow-section">
-                <div class="workflow-steps">
-                    <div class="workflow-step">
-                        <span class="step-number">1</span>
-                        <span>INITIAL BUILD - Create the foundation</span>
-                    </div>
-                    <div class="step-arrow">↓</div>
-                    <div class="workflow-step">
-                        <span class="step-number">2</span>
-                        <span>BUG FIXES & REFINEMENTS - Get core working perfectly</span>
-                    </div>
-                    <div class="step-arrow">↓</div>
-                    <div class="workflow-step">
-                        <span class="step-number">3</span>
-                        <span>FEATURE ADDITIONS - Add one feature at a time</span>
-                    </div>
-                    <div class="step-arrow">↓</div>
-                    <div class="workflow-step">
-                        <span class="step-number">4</span>
-                        <span>UI/UX IMPROVEMENTS - Polish the interface</span>
-                    </div>
-                    <div class="step-arrow">↓</div>
-                    <div class="workflow-step">
-                        <span class="step-number">5</span>
-                        <span>PERFORMANCE OPTIMIZATION - Make it fast and efficient</span>
-                    </div>
-                    <div class="step-arrow">↓</div>
-                    <div class="workflow-step">
-                        <span class="step-number">6</span>
-                        <span>TESTING & VALIDATION - Ensure quality</span>
-                    </div>
-                    <div class="step-arrow">↓</div>
-                    <div class="workflow-step">
-                        <span class="step-number">7</span>
-                        <span>DEPLOYMENT PREP - Ready for production</span>
-                    </div>
-                    <div class="step-arrow">↓</div>
-                    <div class="workflow-step">
-                        <span class="step-number">8</span>
-                        <span>MONITORING & MAINTENANCE - Ongoing improvements</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <!-- Hero -->
+  <section class="hero" aria-labelledby="hero-heading">
+    <div class="hero-badge">✨ Production-Ready AI Prompts</div>
+    <h1 id="hero-heading">
+      Build Any Industry App<br>
+      with <span class="highlight">AI-Powered Prompts</span>
+    </h1>
+    <p>Select your industry, choose a design theme, and instantly generate complete UI specifications for 30+ pages with glassmorphism design, dark/light mode, and full backend integration.</p>
+    <div class="hero-cta">
+      <button class="btn-primary btn-lg" onclick="showPage('sandbox')">Open Sandbox →</button>
+      <button class="btn-ghost btn-lg" onclick="showPage('templates')">Browse Templates</button>
     </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-number">8+</div><div class="stat-label">Industries</div></div>
+      <div class="stat"><div class="stat-number">5</div><div class="stat-label">Design Themes</div></div>
+      <div class="stat"><div class="stat-number">30</div><div class="stat-label">Pages Per App</div></div>
+      <div class="stat"><div class="stat-number">100%</div><div class="stat-label">Production Ready</div></div>
+    </div>
+  </section>
 
-    <script>
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-                
-                btn.classList.add('active');
-                document.getElementById(btn.dataset.tab).classList.add('active');
-            });
-        });
+  <!-- Features -->
+  <section class="section" aria-labelledby="features-heading">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="section-tag">Features</div>
+        <h2 class="section-title" id="features-heading">Everything You Need to Build Fast</h2>
+        <p class="section-sub">From zero to production-ready app specs in minutes, not months.</p>
+      </div>
+      <div class="features-grid">
+        <div class="glass-card feature-card">
+          <div class="feature-badge">New</div>
+          <div class="feature-icon">🏭</div>
+          <h3>Industry-Specific Prompts</h3>
+          <p>Pre-built prompt frameworks for Healthcare, Fintech, EdTech, E-Commerce, SaaS, Real Estate, Social, and Logistics.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon">🎨</div>
+          <h3>5 Design Themes Per Industry</h3>
+          <p>Choose from multiple professional design themes tailored to your industry's user expectations and workflows.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon">📄</div>
+          <h3>30 Pages per Application</h3>
+          <p>Complete page-by-page specifications covering every user flow from authentication to analytics and beyond.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-badge">Hot</div>
+          <div class="feature-icon">🌗</div>
+          <h3>Dark & Light Mode Specs</h3>
+          <p>Full design specifications for both dark and light themes with glassmorphism, blur effects, and smooth transitions.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon">📱</div>
+          <h3>Responsive Design Guidelines</h3>
+          <p>Mobile-first specifications with breakpoints for mobile, tablet, and desktop layouts with proper touch targets.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon">🔐</div>
+          <h3>Auth & RBAC Included</h3>
+          <p>Authentication flows, role-based access control, and security specifications included in every generated prompt.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>Copy-Ready Prompts</h3>
+          <p>One-click copy of the complete prompt — paste it directly into any AI assistant to start building immediately.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon">🏗️</div>
+          <h3>Full Stack Architecture</h3>
+          <p>Prompts include frontend, backend, database schema, API design, and deployment specifications for a complete system.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon">♿</div>
+          <h3>Accessibility Standards</h3>
+          <p>WCAG 2.1 AA compliance built into every prompt — semantic HTML, ARIA labels, and keyboard navigation specs.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-        function copyTemplate(button) {
-            const templateBox = button.previousElementSibling;
-            const text = templateBox.textContent;
-            
-            navigator.clipboard.writeText(text).then(() => {
-                button.textContent = 'Copied!';
-                button.classList.add('copied');
-                
-                setTimeout(() => {
-                    button.textContent = 'Copy Template';
-                    button.classList.remove('copied');
-                }, 2000);
-            });
-        }
-    </script>
+  <!-- How it works -->
+  <section class="section" style="background:var(--gradient-hero);" aria-labelledby="how-heading">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="section-tag">How It Works</div>
+        <h2 class="section-title" id="how-heading">Three Steps to Your Dream App</h2>
+        <p class="section-sub">No technical knowledge required. Just pick, customize, and build.</p>
+      </div>
+      <div class="steps-grid">
+        <div class="glass-card step-card">
+          <div class="step-num">1</div>
+          <h3>Choose Your Industry</h3>
+          <p>Select from 8 industries — Healthcare, Fintech, EdTech, E-Commerce, SaaS, Real Estate, Social, or Logistics.</p>
+        </div>
+        <div class="glass-card step-card">
+          <div class="step-num">2</div>
+          <h3>Pick a Design Theme</h3>
+          <p>Choose one of 5 professional design themes tailored to your industry. Each theme changes the entire app's personality.</p>
+        </div>
+        <div class="glass-card step-card">
+          <div class="step-num">3</div>
+          <h3>Generate & Copy Prompt</h3>
+          <p>Instantly generate a complete, detailed prompt covering all 30 pages. Copy it and paste into any AI to start building.</p>
+        </div>
+        <div class="glass-card step-card">
+          <div class="step-num">4</div>
+          <h3>Build & Iterate</h3>
+          <p>Use the generated prompt with any AI assistant. Iterate using our template library for features, fixes, and improvements.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-banner">
+    <div class="cta-inner">
+      <h2>Ready to Build Your App?</h2>
+      <p>Open the sandbox, select your industry, and generate a complete production-ready app prompt in under 60 seconds.</p>
+      <div class="cta-btns">
+        <button class="btn-primary btn-lg" onclick="showPage('sandbox')">Open Sandbox →</button>
+        <button class="btn-ghost btn-lg" onclick="showPage('templates')">View Templates</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- SANDBOX PAGE -->
+<div id="page-sandbox" class="page-section">
+  <div class="sandbox">
+    <div class="sandbox-inner">
+      <div class="section-header">
+        <div class="section-tag">Sandbox</div>
+        <h2 class="section-title">Industry Prompt Builder</h2>
+        <p class="section-sub">Select an industry, pick a theme, choose your pages, and generate the perfect prompt.</p>
+      </div>
+      <div class="sandbox-layout">
+        <!-- Sidebar -->
+        <div class="sandbox-sidebar">
+          <p style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:12px;">Select Industry</p>
+          <div class="industry-list" id="industryList"></div>
+        </div>
+        <!-- Main -->
+        <div class="sandbox-main">
+          <div class="sandbox-header">
+            <div>
+              <div class="sandbox-title" id="sandboxTitle">Choose an Industry</div>
+              <div style="font-size:.85rem;color:var(--text-secondary);margin-top:4px;" id="sandboxSub">Select from the left to get started</div>
+            </div>
+            <div class="sandbox-actions">
+              <button class="btn-ghost" id="copyPromptBtn" onclick="copyPrompt()" style="display:none;">Copy Prompt</button>
+              <button class="btn-primary" id="generateBtn" onclick="generatePrompt()" style="display:none;">
+                <span id="generateLabel">Generate Prompt</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Themes -->
+          <div id="themesSection" style="display:none;">
+            <p class="prompt-label" style="margin-bottom:10px;">Design Theme</p>
+            <div class="themes-row" id="themesRow"></div>
+          </div>
+
+          <!-- Pages -->
+          <div id="pagesSection" style="display:none;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <p class="prompt-label">Pages Included <span id="pageCount" style="color:var(--accent);">0/30</span></p>
+              <div style="display:flex;gap:8px;">
+                <button onclick="selectAllPages()" style="font-size:.75rem;padding:4px 10px;border-radius:6px;background:var(--bg-glass);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;">Select All</button>
+                <button onclick="clearAllPages()" style="font-size:.75rem;padding:4px 10px;border-radius:6px;background:var(--bg-glass);border:1px solid var(--border);color:var(--text-secondary);cursor:pointer;">Clear All</button>
+              </div>
+            </div>
+            <div class="pages-grid" id="pagesGrid"></div>
+          </div>
+
+          <!-- Prompt Output -->
+          <div id="promptSection" style="display:none;">
+            <p class="prompt-label">Generated Prompt</p>
+            <div class="prompt-output" id="promptOutput">
+              // Your generated prompt will appear here...
+            </div>
+          </div>
+
+          <!-- Empty state -->
+          <div id="emptyState" class="glass-card" style="padding:60px;text-align:center;">
+            <div style="font-size:48px;margin-bottom:16px;">🏗️</div>
+            <h3 style="margin-bottom:8px;">Select an Industry to Begin</h3>
+            <p style="color:var(--text-secondary);font-size:.9rem;">Choose an industry from the left panel to configure your app and generate a complete AI prompt.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TEMPLATES PAGE -->
+<div id="page-templates" class="page-section">
+  <section class="section">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="section-tag">Templates</div>
+        <h2 class="section-title">Prompt Template Library</h2>
+        <p class="section-sub">Copy-ready prompts for every development scenario.</p>
+      </div>
+      <div class="templates-tabs" role="tablist" aria-label="Template categories">
+        <button class="tab-pill active" role="tab" aria-selected="true" onclick="switchTab('initial',this)">Initial Build</button>
+        <button class="tab-pill" role="tab" aria-selected="false" onclick="switchTab('features',this)">Features</button>
+        <button class="tab-pill" role="tab" aria-selected="false" onclick="switchTab('auth',this)">Auth & Security</button>
+        <button class="tab-pill" role="tab" aria-selected="false" onclick="switchTab('ui',this)">UI/UX</button>
+        <button class="tab-pill" role="tab" aria-selected="false" onclick="switchTab('backend',this)">Backend</button>
+        <button class="tab-pill" role="tab" aria-selected="false" onclick="switchTab('debug',this)">Debug & Fix</button>
+        <button class="tab-pill" role="tab" aria-selected="false" onclick="switchTab('deploy',this)">Deploy</button>
+        <button class="tab-pill" role="tab" aria-selected="false" onclick="switchTab('quick',this)">Quick</button>
+      </div>
+      <div class="templates-grid" id="templatesGrid"></div>
+    </div>
+  </section>
+
+  <!-- Best Practices -->
+  <section class="section" style="background:var(--gradient-hero);" aria-labelledby="practices-heading">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="section-tag">Best Practices</div>
+        <h2 class="section-title" id="practices-heading">Prompt Engineering Do's & Don'ts</h2>
+      </div>
+      <div class="practices-grid">
+        <div class="glass-card practice-section">
+          <div class="practice-title"><span class="practice-icon">✅</span> Do These</div>
+          <ul class="practice-list">
+            <li><span class="dot dot-do">✓</span>Be specific about requirements and constraints</li>
+            <li><span class="dot dot-do">✓</span>Provide examples and context in your prompts</li>
+            <li><span class="dot dot-do">✓</span>Specify your tech stack and versions explicitly</li>
+            <li><span class="dot dot-do">✓</span>Mention edge cases and error scenarios</li>
+            <li><span class="dot dot-do">✓</span>Request error handling and loading states</li>
+            <li><span class="dot dot-do">✓</span>Ask for mobile-first responsive design</li>
+            <li><span class="dot dot-do">✓</span>Include accessibility requirements upfront</li>
+            <li><span class="dot dot-do">✓</span>Define data validation rules clearly</li>
+          </ul>
+        </div>
+        <div class="glass-card practice-section">
+          <div class="practice-title"><span class="practice-icon">❌</span> Avoid These</div>
+          <ul class="practice-list">
+            <li><span class="dot dot-dont">✗</span>Vague requests like "make it better"</li>
+            <li><span class="dot dot-dont">✗</span>Requesting too many features at once</li>
+            <li><span class="dot dot-dont">✗</span>Ignoring the existing code structure</li>
+            <li><span class="dot dot-dont">✗</span>Skipping testing requirements entirely</li>
+            <li><span class="dot dot-dont">✗</span>Forgetting about mobile and tablet users</li>
+            <li><span class="dot dot-dont">✗</span>Overlooking security considerations</li>
+            <li><span class="dot dot-dont">✗</span>Neglecting error handling scenarios</li>
+            <li><span class="dot dot-dont">✗</span>Not specifying performance expectations</li>
+          </ul>
+        </div>
+        <div class="glass-card practice-section">
+          <div class="practice-title"><span class="practice-icon">⚡</span> Power Tips</div>
+          <ul class="practice-list">
+            <li><span class="dot dot-do">→</span>Iterate one feature at a time for best results</li>
+            <li><span class="dot dot-do">→</span>Share error messages verbatim, not paraphrased</li>
+            <li><span class="dot dot-do">→</span>Give AI the full file context, not just the problem area</li>
+            <li><span class="dot dot-do">→</span>Reference existing components for consistency</li>
+            <li><span class="dot dot-do">→</span>Ask for explanations alongside code changes</li>
+            <li><span class="dot dot-do">→</span>Build the happy path first, then edge cases</li>
+            <li><span class="dot dot-do">→</span>Use version control before major AI-driven changes</li>
+            <li><span class="dot dot-do">→</span>Test each iteration before adding more complexity</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dev Flow -->
+  <section class="section">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="section-tag">Workflow</div>
+        <h2 class="section-title">Iterative Development Flow</h2>
+        <p class="section-sub">The recommended order for building production apps with AI assistance.</p>
+      </div>
+      <div class="steps-grid">
+        <div class="glass-card step-card"><div class="step-num">1</div><h3>Initial Build</h3><p>Generate the foundation — core pages, routing, and basic components with your chosen stack.</p></div>
+        <div class="glass-card step-card"><div class="step-num">2</div><h3>Bug Fixes</h3><p>Test every flow. Fix issues. Get the core working perfectly before adding anything new.</p></div>
+        <div class="glass-card step-card"><div class="step-num">3</div><h3>Feature Additions</h3><p>Add one feature at a time. Verify it works before moving to the next. No multi-feature PRs.</p></div>
+        <div class="glass-card step-card"><div class="step-num">4</div><h3>UI Polish</h3><p>Refine the interface with animations, micro-interactions, and visual improvements.</p></div>
+        <div class="glass-card step-card"><div class="step-num">5</div><h3>Performance</h3><p>Optimize load times, bundle size, database queries, and API response times.</p></div>
+        <div class="glass-card step-card"><div class="step-num">6</div><h3>Testing</h3><p>Unit tests, integration tests, E2E tests, and accessibility audits.</p></div>
+        <div class="glass-card step-card"><div class="step-num">7</div><h3>Deployment</h3><p>Configure environments, CI/CD, monitoring, and error tracking for production.</p></div>
+        <div class="glass-card step-card"><div class="step-num">8</div><h3>Monitoring</h3><p>Track errors, performance metrics, and user behavior. Iterate based on real data.</p></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- DOCS PAGE -->
+<div id="page-docs" class="page-section">
+  <section class="section">
+    <div class="section-inner">
+      <div class="section-header">
+        <div class="section-tag">Documentation</div>
+        <h2 class="section-title">How to Use This Sandbox</h2>
+        <p class="section-sub">Complete guide to generating and using AI prompts effectively.</p>
+      </div>
+      <div class="features-grid">
+        <div class="glass-card feature-card">
+          <div class="feature-icon">📖</div>
+          <h3>Step 1 — Open Sandbox</h3>
+          <p>Navigate to the Sandbox tab. You'll see 8 industry categories on the left. Each industry has 5 curated design themes and 20 pre-selected pages.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon">🏭</div>
+          <h3>Step 2 — Pick Industry</h3>
+          <p>Click any industry — Healthcare, E-Commerce, Fintech, EdTech, SaaS, Real Estate, Social, or Logistics. The UI updates immediately with relevant options.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon">🎨</div>
+          <h3>Step 3 — Choose Theme</h3>
+          <p>Each industry has 5 professional design themes. Click a theme pill to select it. This changes the visual personality of the entire app in the generated prompt.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon">📄</div>
+          <h3>Step 4 — Select Pages</h3>
+          <p>Choose which of the 30 pages to include. All are selected by default. Deselect pages you don't need or click "Select All" to include everything.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>Step 5 — Generate Prompt</h3>
+          <p>Click "Generate Prompt" to produce a complete, production-ready AI prompt covering your industry, theme, pages, tech stack, and all requirements.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon">📋</div>
+          <h3>Step 6 — Copy & Use</h3>
+          <p>Click "Copy Prompt" and paste it into any AI assistant (Claude, ChatGPT, Gemini, etc.). The AI will build your complete app from the detailed specification.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon">🔄</div>
+          <h3>Iterate with Templates</h3>
+          <p>After the initial build, use the Templates tab for iteration prompts — adding features, fixing bugs, improving UI, integrating APIs, and deploying.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon">🌗</div>
+          <h3>Dark / Light Mode</h3>
+          <p>Toggle between dark and light mode using the moon/sun button in the navbar. Your preference is saved and persists across visits.</p>
+        </div>
+        <div class="glass-card feature-card">
+          <div class="feature-icon">💡</div>
+          <h3>Pro Tip</h3>
+          <p>Start with a focused subset of pages (5–10), get them working perfectly with the AI, then come back and add more pages with the template iteration prompts.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ==================== FOOTER ==================== -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo">
+        <div class="nav-logo" style="width:32px;height:32px;font-size:16px;">⚡</div>
+        AI App Builder
+      </div>
+      <p class="footer-desc">The complete AI prompting framework for building production-ready applications across any industry, fast.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <ul class="footer-links">
+        <li><a href="#" onclick="showPage('sandbox')">Sandbox</a></li>
+        <li><a href="#" onclick="showPage('templates')">Templates</a></li>
+        <li><a href="#" onclick="showPage('docs')">Documentation</a></li>
+        <li><a href="#" onclick="showPage('home')">Home</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Industries</h4>
+      <ul class="footer-links">
+        <li><a href="#" onclick="showPage('sandbox');selectIndustry('healthcare')">Healthcare</a></li>
+        <li><a href="#" onclick="showPage('sandbox');selectIndustry('fintech')">Fintech</a></li>
+        <li><a href="#" onclick="showPage('sandbox');selectIndustry('edtech')">EdTech</a></li>
+        <li><a href="#" onclick="showPage('sandbox');selectIndustry('ecommerce')">E-Commerce</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Resources</h4>
+      <ul class="footer-links">
+        <li><a href="#" onclick="showPage('templates')">Template Library</a></li>
+        <li><a href="#" onclick="showPage('docs')">Getting Started</a></li>
+        <li><a href="#" onclick="showPage('templates')">Best Practices</a></li>
+        <li><a href="#" onclick="showPage('docs')">Pro Tips</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>© 2026 AI App Builder. Built with ⚡ for developers who want to ship faster.</p>
+    <p style="color:var(--accent);">Production-Ready AI Prompts</p>
+  </div>
+</footer>
+
+</div>
+<!-- Copy Toast -->
+<div class="copy-toast" id="copyToast">✅ Copied to clipboard!</div>
+
+<script>
+// ==================== STATE ====================
+const state = {
+  industry: null,
+  theme: 0,
+  selectedPages: new Set(),
+  industries: {},
+  generatedPrompt: '',
+  currentTab: 'initial'
+};
+
+// ==================== THEME ====================
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  const next = isDark ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  document.getElementById('themeToggle').textContent = next === 'dark' ? '🌙' : '☀️';
+  localStorage.setItem('theme', next);
+}
+function initTheme() {
+  const saved = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  document.getElementById('themeToggle').textContent = saved === 'dark' ? '🌙' : '☀️';
+}
+
+// ==================== PAGE ROUTING ====================
+function showPage(id) {
+  document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById('page-' + id);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('.nav-link').forEach(l => {
+    l.classList.toggle('active', l.textContent.toLowerCase().includes(id === 'home' ? 'home' : id));
+  });
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// ==================== INDUSTRIES ====================
+async function loadIndustries() {
+  try {
+    const res = await fetch('/api/industries');
+    state.industries = await res.json();
+    renderIndustryList();
+  } catch(e) {
+    console.error('Failed to load industries', e);
+  }
+}
+
+function renderIndustryList() {
+  const list = document.getElementById('industryList');
+  list.innerHTML = Object.entries(state.industries).map(([key, ind]) => `
+    <button class="industry-btn" id="ind-${key}" onclick="selectIndustry('${key}')" aria-label="Select ${ind.name}">
+      <span class="industry-icon" aria-hidden="true">${ind.icon}</span>
+      <span>${ind.name}</span>
+      <span class="industry-dot" aria-hidden="true"></span>
+    </button>
+  `).join('');
+}
+
+function selectIndustry(key) {
+  state.industry = key;
+  state.theme = 0;
+  const ind = state.industries[key];
+  if (!ind) return;
+
+  // Update active button
+  document.querySelectorAll('.industry-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('ind-' + key);
+  if (btn) btn.classList.add('active');
+
+  // Update header
+  document.getElementById('sandboxTitle').textContent = ind.name;
+  document.getElementById('sandboxSub').textContent = `${ind.themes.length} themes · ${ind.pages.length} pages`;
+
+  // Show controls
+  document.getElementById('themesSection').style.display = 'block';
+  document.getElementById('pagesSection').style.display = 'block';
+  document.getElementById('generateBtn').style.display = 'flex';
+  document.getElementById('copyPromptBtn').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('promptSection').style.display = 'none';
+
+  renderThemes(ind);
+  renderPages(ind);
+}
+
+function renderThemes(ind) {
+  const row = document.getElementById('themesRow');
+  row.innerHTML = ind.themes.map((t, i) => `
+    <button class="theme-pill ${i === 0 ? 'active' : ''}" onclick="selectTheme(${i}, this)" aria-pressed="${i===0}">
+      ${t}
+    </button>
+  `).join('');
+}
+
+function selectTheme(idx, el) {
+  state.theme = idx;
+  document.querySelectorAll('.theme-pill').forEach(p => {p.classList.remove('active');p.setAttribute('aria-pressed','false');});
+  el.classList.add('active');
+  el.setAttribute('aria-pressed','true');
+}
+
+function renderPages(ind) {
+  state.selectedPages = new Set(ind.pages);
+  updatePageCount();
+  const grid = document.getElementById('pagesGrid');
+  grid.innerHTML = ind.pages.map((p, i) => `
+    <button class="page-chip selected" id="pc-${i}" onclick="togglePage('${p}', ${i}, this)" aria-pressed="true">
+      <span class="page-chip-num">${i+1}</span>
+      ${p}
+    </button>
+  `).join('');
+}
+
+function togglePage(page, idx, el) {
+  if (state.selectedPages.has(page)) {
+    state.selectedPages.delete(page);
+    el.classList.remove('selected');
+    el.setAttribute('aria-pressed','false');
+  } else {
+    state.selectedPages.add(page);
+    el.classList.add('selected');
+    el.setAttribute('aria-pressed','true');
+  }
+  updatePageCount();
+}
+
+function updatePageCount() {
+  const total = state.industry ? state.industries[state.industry].pages.length : 0;
+  document.getElementById('pageCount').textContent = `${state.selectedPages.size}/${total}`;
+}
+
+function selectAllPages() {
+  if (!state.industry) return;
+  const pages = state.industries[state.industry].pages;
+  state.selectedPages = new Set(pages);
+  pages.forEach((p, i) => {
+    const el = document.getElementById('pc-' + i);
+    if (el) {el.classList.add('selected');el.setAttribute('aria-pressed','true');}
+  });
+  updatePageCount();
+}
+
+function clearAllPages() {
+  state.selectedPages = new Set();
+  document.querySelectorAll('.page-chip').forEach(c => {c.classList.remove('selected');c.setAttribute('aria-pressed','false');});
+  updatePageCount();
+}
+
+// ==================== GENERATE ====================
+async function generatePrompt() {
+  if (!state.industry) return;
+  const label = document.getElementById('generateLabel');
+  label.innerHTML = '<span class="spinner"></span> Generating...';
+
+  await new Promise(r => setTimeout(r, 400));
+
+  try {
+    const res = await fetch(`/api/generate?industry=${state.industry}&theme=${state.theme}`);
+    const data = await res.json();
+
+    // Override pages with selection
+    const selectedArr = Array.from(state.selectedPages);
+    const pageList = selectedArr.map((p, i) => `  ${i+1}. ${p}`).join('\n');
+    const prompt = buildFullPrompt(data.industry, data.theme, selectedArr, data.color);
+    state.generatedPrompt = prompt;
+
+    document.getElementById('promptOutput').textContent = prompt;
+    document.getElementById('promptSection').style.display = 'block';
+    document.getElementById('copyPromptBtn').style.display = 'flex';
+    document.getElementById('promptSection').scrollIntoView({behavior:'smooth', block:'start'});
+  } catch(e) {
+    state.generatedPrompt = buildFullPrompt(
+      state.industries[state.industry].name,
+      state.industries[state.industry].themes[state.theme],
+      Array.from(state.selectedPages),
+      '#6366f1'
+    );
+    document.getElementById('promptOutput').textContent = state.generatedPrompt;
+    document.getElementById('promptSection').style.display = 'block';
+    document.getElementById('copyPromptBtn').style.display = 'flex';
+  }
+
+  label.textContent = 'Regenerate';
+}
+
+function buildFullPrompt(industry, theme, pages, color) {
+  return `Build a complete, production-ready ${industry} application with the "${theme}" design theme.
+
+═══════════════════════════════════════════
+TECH STACK (Latest Stable Versions)
+═══════════════════════════════════════════
+• Frontend:   React 18 + TypeScript + Tailwind CSS v3
+• Backend:    Node.js 20 + Express + PostgreSQL
+• Auth:       JWT + refresh tokens + RBAC
+• State:      Redux Toolkit + RTK Query
+• Forms:      React Hook Form + Zod validation
+• Animations: Framer Motion
+• Charts:     Recharts
+• Icons:      Lucide React
+
+═══════════════════════════════════════════
+DESIGN SYSTEM — ${theme.toUpperCase()}
+═══════════════════════════════════════════
+• Style:      Glassmorphism with blur(16px) + transparency
+• Dark Mode:  bg-#030712, glass rgba(255,255,255,0.04), text #f1f5f9
+• Light Mode: bg-#f8fafc, glass rgba(255,255,255,0.6), text #0f172a
+• Accent:     ${color} (primary), purple (secondary)
+• Radius:     20px cards, 12px inputs, 999px pills
+• Shadow:     0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)
+• Transition: all 0.3s ease for theme toggle, 0.2s for interactions
+• Fonts:      Inter (UI), JetBrains Mono (code)
+• Theme:      Auto-detect system + manual toggle, persisted in localStorage
+
+═══════════════════════════════════════════
+PAGES (${pages.length} Total)
+═══════════════════════════════════════════
+${pages.map((p, i) => `${String(i+1).padStart(2, '0')}. ${p}`).join('\n')}
+
+═══════════════════════════════════════════
+AUTHENTICATION & AUTHORIZATION
+═══════════════════════════════════════════
+• Login page with email/password + "Remember me"
+• Signup with email verification flow
+• Forgot Password + Reset Password pages
+• 2FA support (TOTP / Email OTP)
+• JWT access tokens (15min) + refresh tokens (7d)
+• Role-Based Access Control:
+  - Admin:   Full system access
+  - Manager: Create/edit/view, no delete
+  - User:    View own data only
+• Protected routes with redirect to login
+• Auto-logout on token expiry
+• Session management across devices
+
+═══════════════════════════════════════════
+CORE FEATURES (Every Page)
+═══════════════════════════════════════════
+• Dark / Light mode toggle in navbar (persisted)
+• Fully responsive: mobile (320px+), tablet (768px+), desktop (1280px+)
+• Loading skeletons on all data fetches
+• Error boundaries with user-friendly fallbacks
+• Toast notifications (success / error / warning)
+• Breadcrumb navigation
+• Empty states with helpful CTAs
+• Infinite scroll or pagination where applicable
+• Search with debounce (300ms) on all list views
+• Sort and filter panels on all data tables
+• Export to CSV/PDF from all list views
+• Keyboard navigation (Tab, Escape, Enter)
+• ARIA labels on all interactive elements
+• WCAG 2.1 AA accessibility compliance
+• Focus visible indicators
+
+═══════════════════════════════════════════
+BACKEND & API
+═══════════════════════════════════════════
+• RESTful API with versioning (/api/v1/...)
+• Full CRUD endpoints for all entities
+• Input validation with express-validator
+• SQL injection prevention (parameterized queries)
+• Rate limiting: 100 req/min general, 5 req/min auth
+• CORS configured for allowed origins only
+• Helmet.js security headers (CSP, HSTS, X-Frame)
+• Request/response logging with Winston
+• Error handling middleware with proper HTTP codes
+• Pagination: ?page=1&limit=20 on all list endpoints
+• File uploads via Multer (images, documents)
+• Background jobs for emails and reports
+• WebSocket for real-time notifications
+
+═══════════════════════════════════════════
+DATABASE SCHEMA
+═══════════════════════════════════════════
+• Users table (id, name, email, password_hash, role, verified, created_at)
+• Roles & Permissions tables (RBAC)
+• Audit logs (user_id, action, entity, entity_id, timestamp, ip)
+• Notifications (user_id, type, message, read, created_at)
+• File attachments (entity_type, entity_id, url, size, mime)
+• Industry-specific tables for all entities
+• Indexes on: email, created_at, foreign keys
+• Soft deletes (deleted_at) on all major tables
+
+═══════════════════════════════════════════
+PRODUCTION REQUIREMENTS
+═══════════════════════════════════════════
+✅ Zero console.log errors in production
+✅ Zero TODO/FIXME/placeholder comments
+✅ All forms have validation with field-level errors
+✅ All API calls have error + loading states
+✅ Environment variables via .env (never hardcoded)
+✅ Code splitting by route (React.lazy + Suspense)
+✅ Images optimized and lazy loaded
+✅ Bundle analyzer — keep initial bundle < 200kb
+✅ Lighthouse score > 90 (Performance, Accessibility)
+✅ E2E critical paths tested (Playwright or Cypress)
+✅ Docker-ready with Dockerfile + docker-compose
+✅ CI/CD pipeline config (GitHub Actions)
+
+═══════════════════════════════════════════
+FOLDER STRUCTURE
+═══════════════════════════════════════════
+/client
+  /src
+    /components  (reusable UI components)
+    /pages       (one folder per page)
+    /layouts     (AppLayout, AuthLayout)
+    /hooks       (custom React hooks)
+    /store       (Redux slices + RTK Query apis)
+    /utils       (helpers, formatters, validators)
+    /types       (TypeScript interfaces)
+    /styles      (global CSS, theme variables)
+  /public
+
+/server
+  /src
+    /routes      (Express routers)
+    /controllers (business logic)
+    /middleware  (auth, validation, rate-limit)
+    /models      (database models/queries)
+    /services    (email, file storage, etc.)
+    /utils       (helpers, logger)
+  /migrations    (SQL migration files)
+  /seeds         (seed data)
+
+Start building now. Implement every page listed. Follow all design, auth, and production requirements exactly.`;
+}
+
+function copyPrompt() {
+  if (!state.generatedPrompt) return;
+  navigator.clipboard.writeText(state.generatedPrompt).then(() => showToast('✅ Prompt copied to clipboard!'));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('copyToast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ==================== TEMPLATES ====================
+const TEMPLATES = {
+  initial: [
+    {
+      tag:'Foundation',tagColor:'rgba(99,102,241,0.15)',tagText:'#6366f1',
+      name:'Full App Generation',
+      desc:'Complete prompt for building an app from scratch',
+      code:`Build me a [APP_TYPE] with:
+
+Core Features:
+1. [Feature 1 - specific]
+2. [Feature 2 - specific]
+3. [Feature 3 - specific]
+
+Stack: React + TypeScript + Tailwind
+Backend: Node.js + Express + PostgreSQL
+Auth: JWT with RBAC
+Design: Glassmorphism, dark+light mode, responsive`
+    },
+    {
+      tag:'Architecture',tagColor:'rgba(139,92,246,0.15)',tagText:'#8b5cf6',
+      name:'Tech Stack Specification',
+      desc:'Define your complete technical stack',
+      code:`Tech Stack:
+- Frontend: React 18 + TypeScript + Tailwind CSS
+- Backend: Node.js + Express (or FastAPI)
+- Database: PostgreSQL + Prisma ORM
+- Auth: JWT + refresh tokens
+- State: Redux Toolkit + RTK Query
+- Forms: React Hook Form + Zod
+- Animations: Framer Motion
+- Deployment: Vercel (frontend) + Railway (backend)`
+    },
+    {
+      tag:'Design System',tagColor:'rgba(16,185,129,0.15)',tagText:'#10b981',
+      name:'Design Requirements',
+      desc:'Complete design specification for your app',
+      code:`Design Requirements:
+- Style: Glassmorphism (backdrop-filter:blur(16px))
+- Dark Mode: bg #030712, glass rgba(255,255,255,0.04)
+- Light Mode: bg #f8fafc, glass rgba(255,255,255,0.6)
+- Primary Color: [your-color]
+- Border Radius: 20px cards, 12px inputs
+- Typography: Inter (UI), JetBrains Mono (code)
+- Animations: Framer Motion, 0.2s transitions
+- Mobile First: 320px → 768px → 1280px breakpoints
+- Accessibility: WCAG 2.1 AA, ARIA labels`
+    }
+  ],
+  features: [
+    {
+      tag:'Feature',tagColor:'rgba(245,158,11,0.15)',tagText:'#f59e0b',
+      name:'Add New Feature',
+      desc:'Request a specific new feature addition',
+      code:`Add [FEATURE_NAME] that allows users to [ACTION].
+
+Requirements:
+- [Requirement 1]
+- [Requirement 2]
+- Integrate with existing [component/API]
+- Store in [table/collection]
+- Include validation for [fields]
+- Show loading and error states
+- Make it fully responsive
+- Add to navigation if needed`
+    },
+    {
+      tag:'Real-time',tagColor:'rgba(6,182,212,0.15)',tagText:'#06b6d4',
+      name:'Real-time Features',
+      desc:'Add WebSocket-based real-time updates',
+      code:`Add real-time functionality using WebSockets:
+- Real-time updates for [data type]
+- Online/offline user status indicator
+- Sync changes across browser tabs
+- Handle connection drops with auto-reconnect
+- Show typing indicators in [chat/comments]
+- Optimistic UI updates before server confirms
+- Notification badge with unread count
+- Toast notifications for live events`
+    },
+    {
+      tag:'Analytics',tagColor:'rgba(236,72,153,0.15)',tagText:'#ec4899',
+      name:'Analytics Dashboard',
+      desc:'Add analytics and data visualization',
+      code:`Implement an analytics dashboard with:
+- Key metrics cards (with trend indicators)
+- Line chart: [metric] over time (daily/weekly/monthly toggle)
+- Bar chart: [metric] by [category]
+- Pie/donut chart: [distribution]
+- Data table with sorting and export (CSV/PDF)
+- Date range picker filter
+- Compare periods (this vs last month)
+- All charts responsive and accessible
+Use Recharts. Make it match the existing design.`
+    }
+  ],
+  auth: [
+    {
+      tag:'Security',tagColor:'rgba(239,68,68,0.15)',tagText:'#ef4444',
+      name:'JWT Authentication',
+      desc:'Complete auth system with JWT',
+      code:`Implement JWT authentication with:
+
+Pages: Login, Signup, Forgot Password, Reset Password
+Auth: Access token (15min) + Refresh token (7d, httpOnly cookie)
+Roles: Admin (full), Manager (create/edit), User (own data)
+
+Security:
+- Bcrypt password hashing (10 rounds)
+- Rate limit: 5 login attempts per 15 min (per IP)
+- Email verification on signup
+- CSRF protection
+- Secure, httpOnly, SameSite cookies
+- Logout from all devices endpoint
+- Session activity log`
+    },
+    {
+      tag:'RBAC',tagColor:'rgba(99,102,241,0.15)',tagText:'#6366f1',
+      name:'Role-Based Access Control',
+      desc:'Implement granular permissions system',
+      code:`Implement RBAC with these roles:
+- Admin: Full system access, user management
+- Manager: Create/edit/view all, cannot delete
+- User: View and edit own data only
+
+Implementation:
+- roles and permissions tables in DB
+- Middleware: requireRole('admin') or requirePermission('users:write')
+- Frontend: usePermission() hook
+- Hide/disable UI elements based on role
+- 403 page for unauthorized access attempts
+- Admin panel for role assignment`
+    }
+  ],
+  ui: [
+    {
+      tag:'UI/UX',tagColor:'rgba(139,92,246,0.15)',tagText:'#8b5cf6',
+      name:'Glassmorphism Redesign',
+      desc:'Apply glassmorphism to a component or page',
+      code:`Redesign [COMPONENT/PAGE] with glassmorphism:
+
+Visual:
+- backdrop-filter: blur(16px)
+- background: rgba(255,255,255,0.04) dark / rgba(255,255,255,0.6) light
+- border: 1px solid rgba(255,255,255,0.1)
+- border-radius: 20px
+- box-shadow: 0 8px 32px rgba(0,0,0,0.4)
+
+Animations:
+- Card hover: translateY(-4px) + box-shadow increase
+- Page transitions: opacity + translateY(20px) → 0
+- Button press: scale(0.98)
+- Loading: skeleton shimmer animation
+- Stagger list items: 0.05s delay each`
+    },
+    {
+      tag:'Theme',tagColor:'rgba(16,185,129,0.15)',tagText:'#10b981',
+      name:'Dark/Light Mode',
+      desc:'Add complete dark and light mode support',
+      code:`Implement dark/light mode:
+
+- Toggle button in navbar (moon/sun icon)
+- Auto-detect: prefers-color-scheme
+- Manual override saved in localStorage
+- Smooth transition: all CSS vars 0.3s ease
+
+CSS Variables approach:
+:root[data-theme="dark"] { --bg: #030712; --text: #f1f5f9; }
+:root[data-theme="light"] { --bg: #f8fafc; --text: #0f172a; }
+
+Ensure ALL components use CSS variables.
+No hardcoded colors anywhere.
+Test every page in both modes.`
+    }
+  ],
+  backend: [
+    {
+      tag:'API',tagColor:'rgba(6,182,212,0.15)',tagText:'#06b6d4',
+      name:'REST API Design',
+      desc:'Design and implement REST API endpoints',
+      code:`Create backend API for [FEATURE]:
+
+Database:
+- Table: [name] (id, fields, created_at, updated_at, deleted_at)
+- Indexes: [key fields]
+- Relations: [FK references]
+
+Endpoints:
+GET    /api/v1/[resource]         → List (paginated, filtered, sorted)
+GET    /api/v1/[resource]/:id     → Get single
+POST   /api/v1/[resource]         → Create (validate input)
+PUT    /api/v1/[resource]/:id     → Update (validate + authorize)
+DELETE /api/v1/[resource]/:id     → Soft delete
+
+Include: auth middleware, validation, proper HTTP codes, error messages`
+    },
+    {
+      tag:'Database',tagColor:'rgba(245,158,11,0.15)',tagText:'#f59e0b',
+      name:'Database Schema',
+      desc:'Design a complete database schema',
+      code:`Design PostgreSQL schema for [FEATURE]:
+
+CREATE TABLE [name] (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID NOT NULL REFERENCES users(id),
+  [field1]    VARCHAR(255) NOT NULL,
+  [field2]    TEXT,
+  status      VARCHAR(50) DEFAULT 'active',
+  metadata    JSONB DEFAULT '{}',
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW(),
+  deleted_at  TIMESTAMPTZ
+);
+
+CREATE INDEX idx_[name]_user_id ON [name](user_id);
+CREATE INDEX idx_[name]_created_at ON [name](created_at DESC);`
+    }
+  ],
+  debug: [
+    {
+      tag:'Debug',tagColor:'rgba(239,68,68,0.15)',tagText:'#ef4444',
+      name:'Fix a Bug',
+      desc:'Report and fix a specific bug',
+      code:`The [FEATURE] is broken. Here's the issue:
+
+What's happening: [describe actual behavior]
+Expected behavior: [what should happen]
+Steps to reproduce:
+  1. [Step 1]
+  2. [Step 2]
+  3. [Step 3]
+
+Error from console/logs:
+[paste exact error message here]
+
+Files involved: [list files]
+
+Please fix this and explain what caused it.`
+    },
+    {
+      tag:'Review',tagColor:'rgba(99,102,241,0.15)',tagText:'#6366f1',
+      name:'Code Review Request',
+      desc:'Get improvement suggestions',
+      code:`Review [COMPONENT/FEATURE] and improve:
+
+1. Code quality — remove duplication, improve naming
+2. Performance — memoization, unnecessary re-renders
+3. Security — input validation, XSS prevention  
+4. Accessibility — ARIA labels, keyboard nav
+5. Error handling — catch all failure cases
+6. TypeScript — remove any types, add proper types
+7. UX — loading states, empty states, error states
+
+Provide specific, actionable code changes with explanations.`
+    }
+  ],
+  deploy: [
+    {
+      tag:'DevOps',tagColor:'rgba(16,185,129,0.15)',tagText:'#10b981',
+      name:'Production Deployment',
+      desc:'Prepare and deploy to production',
+      code:`Prepare for production deployment:
+
+Environment:
+- Move all secrets to .env (never in code)
+- Separate .env.development and .env.production
+- Configure DATABASE_URL, JWT_SECRET, CORS_ORIGIN
+
+Frontend (Vercel):
+- vercel.json with rewrite rules
+- Build command: npm run build
+- Set all VITE_* env vars in Vercel dashboard
+
+Backend (Railway/Render):
+- Dockerfile ready
+- Health check endpoint: GET /health
+- Database migrations on deploy
+- PM2 or Node cluster for multi-core
+
+Monitoring:
+- Sentry for error tracking
+- Log aggregation (Logtail / Axiom)
+- Uptime monitoring (BetterUptime)`
+    }
+  ],
+  quick: [
+    {
+      tag:'Quick',tagColor:'rgba(245,158,11,0.15)',tagText:'#f59e0b',
+      name:'Add Feature',
+      desc:'Fast feature addition',
+      code:`Add [FEATURE] so users can [ACTION].
+Include: validation, error state, loading state.
+Style to match existing [component].
+Make it responsive and accessible.`
+    },
+    {
+      tag:'Quick',tagColor:'rgba(239,68,68,0.15)',tagText:'#ef4444',
+      name:'Fix Bug',
+      desc:'Fast bug fix',
+      code:`Fix: [DESCRIBE BUG].
+Happens when [STEPS].
+Should instead [EXPECTED BEHAVIOR].
+Check [relevant file/component].`
+    },
+    {
+      tag:'Quick',tagColor:'rgba(139,92,246,0.15)',tagText:'#8b5cf6',
+      name:'Style Update',
+      desc:'Fast styling change',
+      code:`Update [COMPONENT] styling:
+- Change [color/size/spacing/layout]
+- Add [animation/hover effect/transition]
+- Make it [more modern/minimal/bold]
+Keep all functionality intact.`
+    },
+    {
+      tag:'Quick',tagColor:'rgba(6,182,212,0.15)',tagText:'#06b6d4',
+      name:'API Connect',
+      desc:'Fast API integration',
+      code:`Connect to [API/SERVICE]:
+- Endpoint: [URL]
+- Auth: [method]
+- Fetch [data]
+- Display as [component]
+- Handle loading and error states.`
+    }
+  ]
+};
+
+function renderTemplates(category) {
+  const items = TEMPLATES[category] || [];
+  const grid = document.getElementById('templatesGrid');
+  grid.innerHTML = items.map((t, i) => `
+    <div class="glass-card template-card">
+      <div class="template-tag" style="background:${t.tagColor};color:${t.tagText};">${t.tag}</div>
+      <h3>${t.name}</h3>
+      <p class="desc">${t.desc}</p>
+      <div class="template-code">${escHtml(t.code)}</div>
+      <div class="template-footer">
+        <span style="font-size:.78rem;color:var(--text-muted);">${t.code.split('\n').length} lines</span>
+        <button class="copy-btn" id="cbtn-${category}-${i}" onclick="copyTemplate('${category}',${i},'${category}-${i}')">Copy</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function copyTemplate(cat, idx, btnId) {
+  const text = TEMPLATES[cat][idx].code;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('cbtn-' + btnId);
+    if (btn) {
+      btn.textContent = '✅ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {btn.textContent = 'Copy';btn.classList.remove('copied');}, 2000);
+    }
+    showToast('✅ Template copied!');
+  });
+}
+
+function switchTab(cat, el) {
+  state.currentTab = cat;
+  document.querySelectorAll('.tab-pill').forEach(p => {p.classList.remove('active');p.setAttribute('aria-selected','false');});
+  el.classList.add('active');
+  el.setAttribute('aria-selected','true');
+  renderTemplates(cat);
+}
+
+// ==================== SCROLL PROGRESS ====================
+window.addEventListener('scroll', () => {
+  const bar = document.getElementById('progressBar');
+  const pct = (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100;
+  bar.style.width = Math.min(pct, 100) + '%';
+});
+
+// ==================== INIT ====================
+document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  loadIndustries();
+  renderTemplates('initial');
+});
+</script>
 </body>
 </html>
