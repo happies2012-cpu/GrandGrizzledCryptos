@@ -1,7 +1,6 @@
-from flask import Flask, render_template, jsonify
-import os
-
-app = Flask(__name__)
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import json
+from urllib.parse import urlparse
 
 prompts_data = {
     "initial_prompts": {
@@ -424,17 +423,66 @@ best_practices = {
     ]
 }
 
-@app.route('/')
-def index():
-    return render_template('index.html', prompts=prompts_data, best_practices=best_practices)
+html = """<!DOCTYPE html>
+<html lang=\"en\">
+<head>
+  <meta charset=\"UTF-8\" />
+  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
+  <title>AI Prompt Framework</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#0f172a; color:#e2e8f0; margin:0; padding:24px; }
+    .card { background:#1e293b; border:1px solid #334155; border-radius:16px; padding:20px; margin-bottom:16px; }
+    h1,h2,h3 { margin-top:0; }
+    pre { white-space: pre-wrap; background:#0b1220; padding:16px; border-radius:12px; overflow:auto; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:16px; }
+    .muted { color:#94a3b8; }
+    .pill { display:inline-block; padding:6px 10px; border-radius:999px; background:#6366f1; margin-right:8px; }
+    a { color:#93c5fd; }
+  </style>
+</head>
+<body>
+  <h1>AI Prompt Framework</h1>
+  <p class=\"muted\">Interactive reference for prompt templates and best practices.</p>
+  <div class=\"card\">
+    <h2>Available Sections</h2>
+    <p>Initial Prompts, Iteration Prompts, Specialized App Types, Debugging & Refinement, Quick Templates</p>
+  </div>
+  <h2>Best Practices</h2>
+  <div class=\"grid\">
+    <div class=\"card\"><h3>DO</h3><ul>""" + "".join(f"<li>{x}</li>" for x in best_practices["do"]) + """</ul></div>
+    <div class=\"card\"><h3>DON'T</h3><ul>""" + "".join(f"<li>{x}</li>" for x in best_practices["dont"]) + """</ul></div>
+  </div>
+  <h2>Templates</h2>
+  """ + "".join(
+    f'<div class="card"><h3>{section["title"]}</h3>' + "".join(
+      f'<div class="card"><h4>{item["name"]}</h4><p class="muted">{item["description"]}</p><pre>{item["template"]}</pre></div>'
+      for item in section["items"]
+    ) + '</div>'
+    for section in prompts_data.values()
+  ) + """
+  <div class=\"card\"><h2>Health</h2><p>OK</p></div>
+</body>
+</html>"""
 
-@app.route('/api/prompts')
-def get_prompts():
-    return jsonify(prompts_data)
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        parsed = urlparse(self.path)
+        if parsed.path == "/api/prompts":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps(prompts_data).encode())
+            return
+        if parsed.path == "/health":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "healthy"}).encode())
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(html.encode())
 
-@app.route('/health')
-def health():
-    return jsonify({"status": "healthy"})
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+if __name__ == "__main__":
+    HTTPServer(("0.0.0.0", 5000), Handler).serve_forever()
