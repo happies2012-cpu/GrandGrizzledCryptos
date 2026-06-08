@@ -1,36 +1,66 @@
-# AI Prompt Framework
+# AI App Builder — Neural Prompt Framework
 
 ## Overview
-An interactive web application that organizes and displays AI prompting templates for building apps. Users can browse categorized prompt templates, copy them, and learn best practices for working with AI assistants.
-
-## Current State
-- Flask web application running on port 5000
-- Displays the comprehensive AI prompting framework document
-- Organized into tabbed sections: Initial Prompts, Iteration Prompts, App Types, Debugging, Quick Templates
-- Includes Best Practices and Development Flow sections
-- Copy-to-clipboard functionality for all templates
+A production-ready React 18 + TypeScript + Vite web application that functions as an industry-specific AI prompt sandbox. Users select an industry, configure a design theme and page scope, then generate a complete production-ready application specification in one click.
 
 ## Tech Stack
-- Backend: Python Flask
-- Frontend: HTML/CSS/JavaScript (vanilla)
-- Styling: Custom CSS with dark theme
+- **Frontend**: React 18 + TypeScript + Vite 5
+- **Styling**: Tailwind CSS v3 + custom CSS variables (glassmorphism, dark/light mode)
+- **Animation**: Framer Motion
+- **Icons**: Lucide React
+- **Server**: Vite dev server (port 5000), launched via `python app.py` → `node vite`
+
+## Features
+- 8 industry sectors (Healthcare, E-Commerce, Fintech, EdTech, SaaS, Real Estate, Social, Logistics)
+- 5 design themes per industry
+- 20 page modules per industry (selectable)
+- Full-spectrum prompt generator: tech stack, auth, DB schema, design system, security, production requirements
+- Template library (8 categories, copy-ready)
+- Dark/light theme toggle (persisted in localStorage)
+- Scroll progress bar, animated page transitions, glassmorphism cards
 
 ## Project Structure
 ```
 /
-├── app.py              # Main Flask application
-├── templates/
-│   └── index.html      # Main page template
-├── static/             # Static assets (if needed)
-├── attached_assets/    # Original framework document
-└── main.py            # Legacy Cohere script (unused)
+├── app.py                  # Python launcher → runs Vite dev server
+├── index.html              # Vite HTML entry
+├── vite.config.ts          # Vite config (port 5000, @/ alias)
+├── tailwind.config.ts      # Tailwind + dark mode config
+├── src/
+│   ├── main.tsx            # React entry
+│   ├── App.tsx             # Root app, page routing, ThemeProvider
+│   ├── index.css           # CSS variables, glass utilities, base styles
+│   ├── context/
+│   │   └── ThemeContext.tsx
+│   ├── components/
+│   │   ├── layout/
+│   │   │   ├── Navbar.tsx
+│   │   │   └── Footer.tsx
+│   │   └── ui/
+│   │       ├── AnimatedBackground.tsx
+│   │       ├── GlassCard.tsx
+│   │       ├── GlassButton.tsx
+│   │       ├── ThemeToggle.tsx
+│   │       ├── Badge.tsx
+│   │       └── SectionTag.tsx
+│   ├── pages/
+│   │   ├── Home.tsx
+│   │   ├── Sandbox.tsx
+│   │   └── Templates.tsx
+│   │   └── Docs.tsx
+│   └── data/
+│       ├── industries.ts   # 8 industries × 5 themes × 20 pages
+│       └── templates.ts    # 8 template categories
+└── public/
+    └── favicon.svg
 ```
 
 ## Running the App
-The app runs via the configured workflow which executes `python app.py` on port 5000.
+The workflow runs `python app.py` which:
+1. Prepends `/tmp/libstdc_compat` (symlink to Ubuntu system libstdc++.so.6) to LD_LIBRARY_PATH
+2. Calls `node node_modules/.bin/vite --port 5000 --host 0.0.0.0` directly
+
+This workaround is required because the Nix cpplibs libstdc++ is missing CXXABI_1.3.15 needed by icu4c-76, but the Ubuntu system libstdc++ at `/usr/lib/x86_64-linux-gnu/libstdc++.so.6` has it.
 
 ## User Preferences
 - None recorded yet
-
-## Recent Changes
-- December 4, 2025: Initial creation of prompt framework web app

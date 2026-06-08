@@ -1,0 +1,1 @@
+- [Nix Node libstdc++ workaround](nix-node-libstdc.md) — Node 20 in this Nix env needs system libstdc++ for CXXABI_1.3.15; app.py prepends /tmp/libstdc_compat to LD_LIBRARY_PATH.
